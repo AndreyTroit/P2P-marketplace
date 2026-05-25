@@ -12,10 +12,10 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# 1. Эндпоинт РЕГИСТРАЦИИ
+#РЕГИСТРАЦИЯ
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    # Проверяем, нет ли уже пользователя с таким именем или email
+    # Проверка существования пользователя
     db_user = db.query(models.User).filter(
         (models.User.username == user.username) | (models.User.email == user.email)
     ).first()
@@ -35,10 +35,10 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return {"message": "Пользователь успешно зарегистрирован", "user_id": new_user.id}
 
-# 2. Эндпоинт АВТОРИЗАЦИИ (ЛОГИН)
+#АВТОРИЗАЦИЯ (ЛОГИН)
 @app.post("/login", response_model=schemas.Token)
 def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # Ищем пользователя (FastAPI OAuth2 форма использует поле username для логина)
+    # Ищем пользователя
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
     
     if not user or not auth.verify_password(form_data.password, user.password_hash):
