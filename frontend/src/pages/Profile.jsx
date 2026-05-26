@@ -65,7 +65,7 @@ export default function Profile() {
   };
 
   if (!token) {
-    return <div style={{ padding: '40px', textAlign: 'center' }}><h2>🔒 Доступ ограничен</h2><p>Пожалуйста, авторизуйтесь.</p></div>;
+    return <div style={{ padding: '40px', textAlign: 'center', color: '#6c757d' }}><h2>🔒 Доступ ограничен</h2><p>Пожалуйста, авторизуйтесь.</p></div>;
   }
 
   if (loading || !profile) return <p style={{ padding: '20px' }}>Загрузка профиля...</p>;

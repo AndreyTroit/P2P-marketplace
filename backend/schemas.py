@@ -18,6 +18,7 @@ class ItemCreate(BaseModel):
     description: Optional[str] = None
     price_per_day: float
     category_id: int
+    image_url: Optional[str] = None
 
 class ItemResponse(BaseModel):
     id: int
@@ -27,6 +28,8 @@ class ItemResponse(BaseModel):
     category_id: int
     owner_id: int
     is_available: bool
+    image_url: Optional[str] = None
+    owner_username: Optional[str] = None
 
     class Config:
         from_attributes = True

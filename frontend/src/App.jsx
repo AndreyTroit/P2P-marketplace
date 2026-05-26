@@ -7,6 +7,7 @@ import ItemDetail from './pages/ItemDetail';
 import Cart from './pages/Cart';
 import Chat from './pages/Chat';
 import UserReviews from './pages/UserReviews';
+import UserPublicProfile from './pages/UserPublicProfile';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -87,6 +88,7 @@ export default function App() {
             <Route path="/cart/:id" element={<Cart />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/profile/reviews/:userId" element={<UserReviews />} />
+            <Route path="/user/:userId" element={<UserPublicProfile />} />
           </Routes>
         </main>
       </div>

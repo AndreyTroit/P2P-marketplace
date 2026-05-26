@@ -41,32 +41,70 @@ export default function ItemDetail() {
     }
   };
 
-  if (!item) return <p style={{ padding: '20px' }}>Загрузка...</p>;
+  if (!item) return <p style={{ padding: '20px', color: '#1e293b' }}>Загрузка...</p>;
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <h2>{item.title}</h2>
-      <div style={{ display: 'flex', gap: '30px', marginTop: '20px', borderBottom: '1px solid #eee', paddingBottom: '30px' }}>
-        <div style={{ width: '300px', height: '200px', background: '#eee', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa' }}>📷 Фото товара</div>
-        <div>
-          <h3>Описание:</h3>
-          <p>{item.description || 'Описание отсутствует.'}</p>
-          <h4 style={{ color: '#007bff' }}>Цена: {item.price_per_day} ₽ / день</h4>
-          {item.is_available ? (
-            <Link to={`/cart/${item.id}`}><button style={{ background: '#28a745', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer' }}>🤝 Арендовать вещь</button></Link>
-          ) : (
-            <button disabled style={{ background: '#ccc', padding: '10px 20px' }}>❌ Занято</button>
-          )}
+    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '1000px', margin: '0 auto' }}>
+
+      <div style={{ 
+        background: '#ffffff', 
+        borderRadius: '12px', 
+        padding: '25px', 
+        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+        display: 'flex', 
+        gap: '40px',
+        alignItems: 'flex-start',
+        marginBottom: '30px'
+      }}>
+
+        <img 
+          src={item.image_url || 'https://via.placeholder.com/400x300?text=Нет+фото'} 
+          alt={item.title}
+          style={{ width: '450px', height: '350px', borderRadius: '15px', objectFit: 'cover' }} 
+        />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <h1 style={{ margin: 0, color: '#0f172a', fontSize: '32px', fontWeight: 'bold' }}>
+            {item.title}
+          </h1>
+          
+          <p style={{ margin: 0, color: '#475569', fontSize: '16px' }}>
+            Владелец: 
+            <Link to={`/user/${item.owner_id}`} style={{ marginLeft: '8px', color: '#0ea5e9', fontWeight: 'bold', textDecoration: 'none' }}>
+              Посмотреть профиль
+            </Link>
+          </p>
+
+          <p style={{ margin: 0, color: '#475569', fontSize: '15px', lineHeight: '1.5' }}>
+            {item.description || 'Описание товара не указано владельцем.'}
+          </p>
+          
+          <div style={{ marginTop: 'auto', fontSize: '24px', fontWeight: 'bold', color: '#22c55e' }}>
+            {item.price_per_day} ₽ <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 'normal' }}>/ день</span>
+          </div>
         </div>
+
       </div>
 
-      {/* --- БЛОК ОСТАВИТЬ ОТЗЫВ ВЛАДЕЛЬЦУ --- */}
       {token ? (
-        <div style={{ marginTop: '30px', maxWidth: '500px', background: '#f9f9f9', padding: '20px', borderRadius: '8px' }}>
-          <h3>✍️ Оставить отзыв о сделке / владельце</h3>
-          <form onSubmit={handleSendReview} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <label>Оценка (от 1 до 5):
-              <select value={rating} onChange={e => setRating(e.target.value)} style={{ marginLeft: '10px', padding: '5px' }}>
+        <div style={{ 
+          background: '#ffffff', 
+          padding: '25px', 
+          borderRadius: '12px', 
+          boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+          maxWidth: '550px' 
+        }}>
+          <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#0f172a' }}>✍️ Оставить отзыв о сделке / владельце</h3>
+          
+          <form onSubmit={handleSendReview} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            
+            <label style={{ color: '#334155', fontSize: '14px', fontWeight: '500' }}>
+              Оценка (от 1 до 5):
+              <select 
+                value={rating} 
+                onChange={e => setRating(e.target.value)} 
+                style={{ marginLeft: '10px', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', color: '#0f172a' }}
+              >
                 <option value="5">5 ★★★★★</option>
                 <option value="4">4 ★★★★</option>
                 <option value="3">3 ★★★</option>
@@ -74,13 +112,56 @@ export default function ItemDetail() {
                 <option value="1">1 ★</option>
               </select>
             </label>
-            <textarea placeholder="Напишите честный отзыв об опыте аренды этого предмета..." value={comment} onChange={e => setComment(e.target.value)} required style={{ padding: '8px', height: '8px', height: '60px' }} />
-            <button type="submit" style={{ background: '#007bff', color: 'white', border: 'none', padding: '8px', cursor: 'pointer' }}>Отправить отзыв</button>
+            
+            <textarea 
+              placeholder="Напишите честный отзыв об опыте аренды этого предмета..." 
+              value={comment} 
+              onChange={e => setComment(e.target.value)} 
+              required 
+              style={{ 
+                padding: '12px', 
+                height: '80px', 
+                borderRadius: '8px', 
+                border: '1px solid #cbd5e1', 
+                color: '#0f172a', 
+                background: 'white',
+                fontSize: '14px',
+                resize: 'none'
+              }} 
+            />
+            
+            <button 
+              type="submit" 
+              style={{ 
+                background: '#0ea5e9', 
+                color: 'white', 
+                border: 'none', 
+                padding: '10px 20px', 
+                cursor: 'pointer', 
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '14px'
+              }}
+            >
+              Отправить отзыв
+            </button>
           </form>
-          {reviewMessage && <p style={{ marginTop: '10px', fontWeight: 'bold' }}>{reviewMessage}</p>}
+          
+          {reviewMessage && (
+            <p style={{ 
+              marginTop: '15px', 
+              fontWeight: 'bold', 
+              color: reviewMessage.includes('❌') ? '#ef4444' : '#10b981',
+              fontSize: '14px'
+            }}>
+              {reviewMessage}
+            </p>
+          )}
         </div>
       ) : (
-        <p style={{ marginTop: '20px', color: '#666' }}>💡 Войдите, чтобы иметь возможность оставлять отзывы.</p>
+        <p style={{ marginTop: '20px', color: '#64748b', fontStyle: 'italic' }}>
+          💡 Войдите, чтобы иметь возможность оставлять отзывы.
+        </p>
       )}
     </div>
   );

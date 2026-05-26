@@ -129,6 +129,27 @@ def get_my_profile(db: Session = Depends(get_db), current_user: models.User = De
         rating=user_rating
     )
 
+@app.get("/users/{user_id}")
+def get_public_profile(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "city": user.city,
+        "bio": user.bio,
+        "avatar_url": user.avatar_url,
+        "rating": db.query(func.avg(models.Review.rating)).join(
+            models.Booking, models.Review.booking_id == models.Booking.id
+        ).join(
+            models.Item, models.Booking.item_id == models.Item.id
+        ).filter(models.Item.owner_id == user.id).scalar()
+    }
+
 @app.put("/users/me", response_model=schemas.UserProfileResponse)
 def update_profile(profile_data: schemas.ProfileUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if profile_data.bio is not None:

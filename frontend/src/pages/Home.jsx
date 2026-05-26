@@ -3,18 +3,17 @@ import { Link } from 'react-router-dom';
 
 export default function Home() {
   const [items, setItems] = useState([]);
-  const [categories, setCategories] = useState([]); // Состояние для списка категорий
+  const [categories, setCategories] = useState([]);
   
-  // Состояния формы
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [pricePerDay, setPricePerDay] = useState('');
-  const [categoryId, setCategoryId] = useState(''); // Сюда запишется ID выбранной категории
+  const [categoryId, setCategoryId] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   
   const [message, setMessage] = useState('');
   const token = localStorage.getItem('token');
 
-  // 1. Загрузка товаров
   const fetchItems = async () => {
     try {
       const response = await fetch('http://localhost:8000/items');
@@ -27,7 +26,6 @@ export default function Home() {
     }
   };
 
-  // 2. Загрузка категорий с бэкенда
   const fetchCategories = async () => {
     try {
       const response = await fetch('http://localhost:8000/categories');
@@ -35,7 +33,7 @@ export default function Home() {
         const data = await response.json();
         setCategories(data);
         if (data.length > 0) {
-          setCategoryId(data[0].id); // По умолчанию выбираем первую категорию из списка
+          setCategoryId(data[0].id);
         }
       }
     } catch (error) {
@@ -45,10 +43,9 @@ export default function Home() {
 
   useEffect(() => {
     fetchItems();
-    fetchCategories(); // Подгружаем категории при открытии сайта
+    fetchCategories();
   }, []);
 
-  // Отправка формы создания товара
   const handleAddItem = async (e) => {
     e.preventDefault();
     setMessage('');
@@ -69,7 +66,7 @@ export default function Home() {
           title: title,
           description: description,
           price_per_day: parseFloat(pricePerDay),
-          category_id: parseInt(categoryId) // Передаем ID из выпадающего списка!
+          category_id: parseInt(categoryId)
         })
       });
 
@@ -93,60 +90,28 @@ export default function Home() {
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
       <h2>Каталог вещей для шеринга</h2>
 
-      {/* --- ФОРМА ДОБАВЛЕНИЯ --- */}
       {token ? (
-        <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', marginBottom: '30px', maxWidth: '400px' }}>
-          <h3>➕ Сдать вещь в аренду</h3>
-          <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <input 
-              type="text" 
-              placeholder="Название вещи" 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
-              required 
-            />
-            <textarea 
-              placeholder="Описание состояния" 
-              value={description} 
-              onChange={(e) => setDescription(e.target.value)} 
-            />
-            <input 
-              type="number" 
-              placeholder="Цена аренды за день (руб)" 
-              value={pricePerDay} 
-              onChange={(e) => setPricePerDay(e.target.value)} 
-              required 
-            />
-
-            {/* ВЫПАДАЮЩИЙ СПИСОК КАТЕГОРИЙ */}
-            <label style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '14px', color: '#555' }}>
-              Выберите категорию:
-              <select 
-                value={categoryId} 
-                onChange={(e) => setCategoryId(e.target.value)}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <button type="submit" style={{ background: '#28a745', color: 'white', border: 'none', padding: '8px', cursor: 'pointer', borderRadius: '4px' }}>
-              Опубликовать
-            </button>
-          </form>
-          {message && <p style={{ color: message.startsWith('Ошибка') ? 'red' : 'green', marginTop: '10px' }}>{message}</p>}
-        </div>
+        <div style={{ background: '#ffffff', padding: '25px', borderRadius: '12px', marginBottom: '40px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+        <h3 style={{ marginTop: 0, color: '#1e293b' }}>➕ Сдать вещь в аренду</h3>
+        <form onSubmit={handleAddItem} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+          <input type="text" placeholder="Название вещи" value={title} onChange={(e) => setTitle(e.target.value)} required style={inputStyle} />
+          <input type="number" placeholder="Цена (руб/день)" value={pricePerDay} onChange={(e) => setPricePerDay(e.target.value)} required style={inputStyle} />
+          <input type="text" placeholder="Ссылка на фото (URL)" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={inputStyle} />
+          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} style={inputStyle}>
+            {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+          </select>
+          <textarea placeholder="Описание состояния..." value={description} onChange={(e) => setDescription(e.target.value)} style={{ ...inputStyle, gridColumn: 'span 2', height: '80px' }} />
+          <button type="submit" style={{ gridColumn: 'span 2', background: '#0f172a', color: 'white', padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+            Опубликовать объявление
+          </button>
+        </form>
+      </div>
       ) : (
         <p style={{ color: '#666', fontStyle: 'italic' }}>
           💡 Чтобы сдать свою вещь в аренду, пожалуйста, <a href="/auth">авторизуйтесь</a>.
         </p>
       )}
 
-      {/* --- СПИСОК ТОВАРОВ --- */}
       <h3>Доступные предложения</h3>
       {items.length === 0 ? (
         <p>Каталог пока пуст.</p>
@@ -171,3 +136,13 @@ export default function Home() {
     </div>
   );
 }
+
+const inputStyle = {
+  padding: '12px',
+  borderRadius: '8px',
+  border: '1px solid #e2e8f0',
+  fontSize: '14px',
+  outline: 'none',
+  background: '#ffffff',
+  color: '#1e293b'
+};
