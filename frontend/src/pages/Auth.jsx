@@ -30,6 +30,7 @@ export default function Auth() {
         if (response.ok) {
           localStorage.setItem('token', data.access_token);
           setMessage('Вы успешно вошли! Токен сохранен.');
+          window.location.href = '/';
         } else {
           setMessage(`Ошибка: ${data.detail || 'Неверные данные'}`);
         }

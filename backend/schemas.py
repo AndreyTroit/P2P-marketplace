@@ -30,3 +30,37 @@ class ItemResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ProfileUpdate(BaseModel):
+    bio: Optional[str] = None
+    city: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+class UserProfileResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    bio: Optional[str]
+    city: Optional[str]
+    avatar_url: Optional[str]
+    rating: float
+
+    class Config:
+        from_attributes = True
+
+class ReviewCreate(BaseModel):
+    item_id: int
+    rating: int
+    comment: Optional[str] = None
+
+class CategoryCreate(BaseModel):
+    name: str
+    slug: str
+
+class CategoryResponse(BaseModel):
+    id: int
+    name: str
+    slug: str
+
+    class Config:
+        from_attributes = True

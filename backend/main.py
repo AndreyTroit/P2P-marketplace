@@ -3,9 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from datetime import timedelta
 from typing import List
 
+import datetime
 import jwt
 import models
 import schemas
@@ -99,3 +101,98 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db), current
     db.commit()
     db.refresh(new_item)
     return new_item
+
+# Получить вещи ТОЛЬКО текущего пользователя (для Личного Кабинета)
+@app.get("/my/items", response_model=List[schemas.ItemResponse])
+def get_my_items(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    my_items = db.query(models.Item).filter(models.Item.owner_id == current_user.id).all()
+    return my_items
+
+
+
+# 1. Получить профиль ТЕКУЩЕГО пользователя (с расчетом реального рейтинга)
+@app.get("/users/me", response_model=schemas.UserProfileResponse)
+def get_my_profile(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Считаем средний рейтинг по всем вещам этого пользователя через отзывы
+    # Находим все отзывы (Review), которые оставлены на вещи (Item), принадлежащие current_user.id
+    avg_rating = db.query(func.avg(models.Review.rating)).join(
+        models.Booking, models.Review.booking_id == models.Booking.id
+    ).join(
+        models.Item, models.Booking.item_id == models.Item.id
+    ).filter(models.Item.owner_id == current_user.id).scalar()
+
+    # Если отзывов еще нет, ставим дефолтный рейтинг 5.0
+    user_rating = round(float(avg_rating), 1) if avg_rating else 5.0
+
+    return schemas.UserProfileResponse(
+        id=current_user.id,
+        username=current_user.username,
+        email=current_user.email,
+        bio=current_user.bio,
+        city=current_user.city,
+        avatar_url=current_user.avatar_url,
+        rating=user_rating
+    )
+
+# 2. Обновить данные профиля
+@app.put("/users/me", response_model=schemas.UserProfileResponse)
+def update_profile(profile_data: schemas.ProfileUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if profile_data.bio is not None:
+        current_user.bio = profile_data.bio
+    if profile_data.city is not None:
+        current_user.city = profile_data.city
+    if profile_data.avatar_url is not None:
+        current_user.avatar_url = profile_data.avatar_url
+        
+    db.commit()
+    db.refresh(current_user)
+    
+    # Возвращаем обновленный профиль (рейтинг пересчитается)
+    return get_my_profile(db, current_user)
+
+# 3. Оставить отзыв на вещь (упрощенная схема: напрямую к Item через фейковое бронирование)
+@app.post("/reviews")
+def leave_review(review: schemas.ReviewCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Для выполнения требований связей создадим быстрое техническое бронирование (Booking)
+    # чтобы привязать к нему Review (так как в нашей БД Review ссылается на Booking)
+    tech_booking = models.Booking(
+        item_id=review.item_id,
+        renter_id=current_user.id,
+        start_date=datetime.date.today(),
+        end_date=datetime.date.today(),
+        total_price=0.0,
+        status="completed"
+    )
+    db.add(tech_booking)
+    db.commit()
+    db.refresh(tech_booking)
+
+    # Теперь создаем сам отзыв
+    new_review = models.Review(
+        booking_id=tech_booking.id,
+        author_id=current_user.id,
+        rating=review.rating,
+        comment=review.comment
+    )
+    db.add(new_review)
+    db.commit()
+    return {"message": "Отзыв успешно добавлен, рейтинг пользователя обновлен!"}
+
+# 1. Получить все категории (для выпадающего списка на фронтенде)
+@app.get("/categories", response_model=List[schemas.CategoryResponse])
+def get_categories(db: Session = Depends(get_db)):
+    return db.query(models.Category).all()
+
+# 2. Создать категорию (для "администратора" через Swagger/прямой запрос)
+@app.post("/categories", response_model=schemas.CategoryResponse)
+def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_db)):
+    # Проверяем, нет ли уже такой категории
+    db_cat = db.query(models.Category).filter(models.Category.slug == category.slug).first()
+    if db_cat:
+        raise HTTPException(status_code=400, detail="Категория с таким slug уже существует")
+        
+    new_category = models.Category(name=category.name, slug=category.slug)
+    db.add(new_category)
+    db.commit()
+    db.refresh(new_category)
+    return new_category

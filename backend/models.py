@@ -10,7 +10,9 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    avatar_url = Column(String(255), nullable=True)
+    avatar_url = Column(String(255), nullable=True, default="")
+    bio = Column(TEXT, nullable=True, default="О себе пока ничего не написано...")
+    city = Column(String(100), nullable=True, default="Не указан")
     created_at = Column(TIMESTAMP, default=datetime.datetime.utcnow)
 
 class Category(Base):
