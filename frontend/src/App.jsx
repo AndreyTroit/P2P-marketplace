@@ -6,12 +6,12 @@ import Profile from './pages/Profile';
 import ItemDetail from './pages/ItemDetail';
 import Cart from './pages/Cart';
 import Chat from './pages/Chat';
+import UserReviews from './pages/UserReviews';
 
 export default function App() {
   const [user, setUser] = useState(null);
   const token = localStorage.getItem('token');
 
-  // Загружаем данные пользователя для шапки (аватарку и имя)
   useEffect(() => {
     if (!token) return;
     
@@ -24,7 +24,6 @@ export default function App() {
       })
       .then(data => setUser(data))
       .catch(() => {
-        // Если токен протух или невалиден — чистим его
         localStorage.removeItem('token');
       });
   }, [token]);
@@ -33,7 +32,6 @@ export default function App() {
     <Router>
       <div style={{ fontFamily: 'sans-serif', background: '#f4f6f9', minHeight: '100vh', margin: 0 }}>
         
-        {/* --- ОБНОВЛЕННАЯ ШАПКА --- */}
         <nav style={{ 
           padding: '10px 20px', 
           background: '#1e293b', 
@@ -50,7 +48,6 @@ export default function App() {
           
           <div>
             {token ? (
-              /* Кликабельный аватар вместо текста "Личный кабинет" */
               <Link to="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', gap: '10px' }}>
                 {user?.avatar_url ? (
                   <img 
@@ -81,7 +78,6 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Контент */}
         <main style={{ maxWidth: '1200px', margin: '20px auto', padding: '0 15px' }}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -90,6 +86,7 @@ export default function App() {
             <Route path="/item/:id" element={<ItemDetail />} />
             <Route path="/cart/:id" element={<Cart />} />
             <Route path="/chat" element={<Chat />} />
+            <Route path="/profile/reviews/:userId" element={<UserReviews />} />
           </Routes>
         </main>
       </div>

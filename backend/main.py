@@ -42,7 +42,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise HTTPException(status_code=401, detail="Пользователь не найден")
     return user
 
-#РЕГИСТРАЦИЯ
+
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(
@@ -63,7 +63,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return {"message": "Пользователь успешно зарегистрирован", "user_id": new_user.id}
 
-#АВТОРИЗАЦИЯ (ЛОГИН)
+
 @app.post("/login", response_model=schemas.Token)
 def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
@@ -81,13 +81,13 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-# ВСЕ ВЕЩИ
+
 @app.get("/items", response_model=List[schemas.ItemResponse])
 def get_all_items(db: Session = Depends(get_db)):
     items = db.query(models.Item).all()
     return items
 
-# СОЗДАНИЕ ВЕЩИ
+
 @app.post("/items", response_model=schemas.ItemResponse)
 def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     new_item = models.Item(
@@ -102,26 +102,21 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db), current
     db.refresh(new_item)
     return new_item
 
-# Получить вещи ТОЛЬКО текущего пользователя (для Личного Кабинета)
+
 @app.get("/my/items", response_model=List[schemas.ItemResponse])
 def get_my_items(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     my_items = db.query(models.Item).filter(models.Item.owner_id == current_user.id).all()
     return my_items
 
 
-
-# 1. Получить профиль ТЕКУЩЕГО пользователя (с расчетом реального рейтинга)
 @app.get("/users/me", response_model=schemas.UserProfileResponse)
 def get_my_profile(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    # Считаем средний рейтинг по всем вещам этого пользователя через отзывы
-    # Находим все отзывы (Review), которые оставлены на вещи (Item), принадлежащие current_user.id
     avg_rating = db.query(func.avg(models.Review.rating)).join(
         models.Booking, models.Review.booking_id == models.Booking.id
     ).join(
         models.Item, models.Booking.item_id == models.Item.id
     ).filter(models.Item.owner_id == current_user.id).scalar()
 
-    # Если отзывов еще нет, ставим дефолтный рейтинг 5.0
     user_rating = round(float(avg_rating), 1) if avg_rating else 5.0
 
     return schemas.UserProfileResponse(
@@ -134,7 +129,6 @@ def get_my_profile(db: Session = Depends(get_db), current_user: models.User = De
         rating=user_rating
     )
 
-# 2. Обновить данные профиля
 @app.put("/users/me", response_model=schemas.UserProfileResponse)
 def update_profile(profile_data: schemas.ProfileUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if profile_data.bio is not None:
@@ -147,14 +141,10 @@ def update_profile(profile_data: schemas.ProfileUpdate, db: Session = Depends(ge
     db.commit()
     db.refresh(current_user)
     
-    # Возвращаем обновленный профиль (рейтинг пересчитается)
     return get_my_profile(db, current_user)
 
-# 3. Оставить отзыв на вещь (упрощенная схема: напрямую к Item через фейковое бронирование)
 @app.post("/reviews")
 def leave_review(review: schemas.ReviewCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    # Для выполнения требований связей создадим быстрое техническое бронирование (Booking)
-    # чтобы привязать к нему Review (так как в нашей БД Review ссылается на Booking)
     tech_booking = models.Booking(
         item_id=review.item_id,
         renter_id=current_user.id,
@@ -167,26 +157,53 @@ def leave_review(review: schemas.ReviewCreate, db: Session = Depends(get_db), cu
     db.commit()
     db.refresh(tech_booking)
 
-    # Теперь создаем сам отзыв
     new_review = models.Review(
         booking_id=tech_booking.id,
-        author_id=current_user.id,
-        rating=review.rating,
-        comment=review.comment
+        author_id=current_user.id, 
+        rating=review.rating,     
+        comment=review.comment 
     )
     db.add(new_review)
     db.commit()
-    return {"message": "Отзыв успешно добавлен, рейтинг пользователя обновлен!"}
+    return {"status": "success", "message": "Отзыв успешно записан в БД!"}
 
-# 1. Получить все категории (для выпадающего списка на фронтенде)
+@app.get("/users/{user_id}/reviews")
+def get_user_reviews(user_id: int, db: Session = Depends(get_db)):
+    results = db.query(
+        models.Review.id,
+        models.Review.rating,
+        models.Review.comment,
+        models.Review.created_at,
+        models.User.username.label("author_name"),
+        models.Item.title.label("item_title")
+    ).join(
+        models.Booking, models.Review.booking_id == models.Booking.id
+    ).join(
+        models.Item, models.Booking.item_id == models.Item.id
+    ).join(
+        models.User, models.Review.author_id == models.User.id  # Автор отзыва
+    ).filter(
+        models.Item.owner_id == user_id # Отзывы на вещи именно этого владельца
+    ).all()
+
+    reviews_list = []
+    for r in results:
+        reviews_list.append({
+            "id": r.id,
+            "rating": r.rating,
+            "comment": r.comment,
+            "created_at": r.created_at.strftime("%d.%m.%Y") if r.created_at else "—",
+            "author_name": r.author_name,
+            "item_title": r.item_title
+        })
+    return reviews_list
+
 @app.get("/categories", response_model=List[schemas.CategoryResponse])
 def get_categories(db: Session = Depends(get_db)):
     return db.query(models.Category).all()
 
-# 2. Создать категорию (для "администратора" через Swagger/прямой запрос)
 @app.post("/categories", response_model=schemas.CategoryResponse)
 def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_db)):
-    # Проверяем, нет ли уже такой категории
     db_cat = db.query(models.Category).filter(models.Category.slug == category.slug).first()
     if db_cat:
         raise HTTPException(status_code=400, detail="Категория с таким slug уже существует")

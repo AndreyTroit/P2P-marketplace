@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [myItems, setMyItems] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Состояния для редактирования
   const [isEditing, setIsEditing] = useState(false);
   const [bio, setBio] = useState('');
   const [city, setCity] = useState('');
@@ -13,11 +13,9 @@ export default function Profile() {
 
   const token = localStorage.getItem('token');
 
-  // Загрузка данных профиля и вещей
   const loadProfileData = async () => {
     if (!token) return;
     try {
-      // 1. Получаем профиль
       const profRes = await fetch('http://localhost:8000/users/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -27,7 +25,6 @@ export default function Profile() {
       setCity(profData.city || '');
       setAvatarUrl(profData.avatar_url || '');
 
-      // 2. Получаем вещи
       const itemsRes = await fetch('http://localhost:8000/my/items', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -45,7 +42,6 @@ export default function Profile() {
     loadProfileData();
   }, [token]);
 
-  // Сохранение изменений профиля
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     try {
@@ -74,20 +70,16 @@ export default function Profile() {
 
   if (loading || !profile) return <p style={{ padding: '20px' }}>Загрузка профиля...</p>;
 
-  // Полностью замени начинку блока return в Profile.jsx на эту структуру:
-
   const handleLogout = () => {
     localStorage.removeItem('token');
-    window.location.href = '/'; // Редирект на главную страницу после выхода
+    window.location.href = '/';
   };
 
   return (
     <div style={{ padding: '30px', fontFamily: 'sans-serif', maxWidth: '900px', margin: '0 auto' }}>
       
-      {/* --- БЛОК ПРОФИЛЯ --- */}
       <div style={{ display: 'flex', gap: '30px', background: '#fff', padding: '25px', borderRadius: '12px', marginBottom: '40px', alignItems: 'center', position: 'relative', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
         
-        {/* Кнопка ВЫЙТИ в углу профиля */}
         <button 
           onClick={handleLogout} 
           style={{ position: 'absolute', top: '15px', right: '15px', background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', cursor: 'pointer', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}
@@ -95,7 +87,6 @@ export default function Profile() {
           🚪 Выйти из аккаунта
         </button>
 
-        {/* Аватарка */}
         {profile.avatar_url ? (
           <img src={profile.avatar_url} alt="Avatar" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #007bff' }} />
         ) : (
@@ -104,8 +95,7 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Информация / Форма редактирования */}
-        <div style={{ flex: 1, paddingRight: '120px' }}> {/* Паддинг справа, чтобы текст не налезал на кнопку выхода */}
+        <div style={{ flex: 1, paddingRight: '120px' }}>
           {!isEditing ? (
             <>
               <h2 style={{ margin: '0 0 5px 0' }}>{profile.username} <span style={{fontSize: '14px', color: '#6c757d'}}>({profile.email})</span></h2>
@@ -113,6 +103,11 @@ export default function Profile() {
               <p style={{ margin: '0 0 15px 0', fontStyle: 'italic', color: '#495057' }}>"{profile.bio}"</p>
               <div style={{ display: 'flex', gap: '20px', fontSize: '14px' }}>
                 <span>⭐ Реальный рейтинг: <strong>{profile.rating} / 5</strong></span>
+                <span>
+                  💬 <Link to={`/profile/reviews/${profile.id}`} style={{ color: '#007bff', textDecoration: 'underline', fontWeight: 'bold' }}>
+                  Посмотреть все отзывы
+                  </Link>
+                </span>
                 <span>📦 Ваших товаров: <strong>{myItems.length}</strong></span>
               </div>
               <button onClick={() => setIsEditing(true)} style={{ marginTop: '15px', padding: '6px 15px', cursor: 'pointer', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}>✏️ Редактировать профиль</button>
@@ -132,7 +127,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* --- БЛОК ТОВАРОВ ПОЛЬЗОВАТЕЛЯ --- */}
       <h3>📋 Мои товары в аренде</h3>
       {myItems.length === 0 ? (
         <p style={{color: '#6c757d'}}>Вы еще не выставили ни одного товара.</p>
