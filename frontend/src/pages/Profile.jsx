@@ -72,7 +72,7 @@ export default function Profile() {
   };
 
   if (!token) {
-    return <div style={{ padding: '40px', textAlign: 'center', color: '#6c757d' }}><h2>🔒 Доступ ограничен</h2><p>Пожалуйста, авторизуйтесь.</p></div>;
+    return <div style={{ padding: '40px', textAlign: 'center', color: '#1e293b' }}><h2>🔒 Доступ ограничен</h2><p>Пожалуйста, авторизуйтесь.</p></div>;
   }
 
   if (loading || !profile) return <p style={{ padding: '20px' }}>Загрузка профиля...</p>;
@@ -105,19 +105,20 @@ export default function Profile() {
         <div style={{ flex: 1, paddingRight: '120px' }}>
           {!isEditing ? (
             <>
-              <h2 style={{ margin: '0 0 5px 0' }}>{profile.username} <span style={{fontSize: '14px', color: '#6c757d'}}>({profile.email})</span></h2>
-              <p style={{ margin: '0 0 10px 0', color: '#6c757d', fontSize: '14px' }}>📍 {profile.city || 'Город не указан'}</p>
-              <p style={{ margin: '0 0 15px 0', fontStyle: 'italic', color: '#495057' }}>"{profile.bio}"</p>
-              <div style={{ display: 'flex', gap: '20px', fontSize: '14px' }}>
+              <h2 style={{ margin: '0 0 5px 0', color: '#0f172a' }}>{profile.username} <span style={{fontSize: '14px', color: '#64748b'}}>({profile.email})</span></h2>
+              <p style={{ margin: '0 0 10px 0', color: '#64748b', fontSize: '14px' }}>📍 {profile.city || 'Город не указан'}</p>
+              <p style={{ margin: '0 0 15px 0', fontStyle: 'italic', color: '#334155', background: '#f8fafc', padding: '10px', borderRadius: '6px' }}>
+                "{profile.bio || 'Нет описания'}"</p>
+              <div style={{ display: 'flex', gap: '25px', fontSize: '14px', color: '#1e293b',  }}>
                 <span>⭐ Рейтинг: <strong>{profile.rating} / 5</strong></span>
                 <span>
-                  💬 <Link to={`/profile/reviews/${profile.id}`} style={{ color: '#007bff', textDecoration: 'underline', fontWeight: 'bold' }}>
+                  💬 <Link to={`/profile/reviews/${profile.id}`} style={{ color: '#0ea5e9', textDecoration: 'underline', fontWeight: 'bold' }}>
                   Отзывы: <strong>{reviews.length}</strong>
                   </Link>
                 </span>
-                <span>📦 Ваших товаров: <strong>{myItems.length}</strong></span>
+                <span>📦 Товаров на сайте: <strong>{myItems.length}</strong></span>
               </div>
-              <button onClick={() => setIsEditing(true)} style={{ marginTop: '15px', padding: '6px 15px', cursor: 'pointer', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}>✏️ Редактировать профиль</button>
+              <button onClick={() => setIsEditing(true)} style={{ marginTop: '15px', padding: '6px 15px', cursor: 'pointer', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', color: '#1e293b' }}>✏️ Редактировать профиль</button>
             </>
           ) : (
             <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
@@ -134,22 +135,32 @@ export default function Profile() {
         </div>
       </div>
 
-      <h3>📦 Мои товары</h3>
+      <h3 style={{ color: '#0f172a', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>📦 Мои товары</h3>
       {myItems.length === 0 ? (
         <p>Каталог пока пуст.</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px', marginTop: '15px' }}>
           {myItems.map((item) => (
             <Link to={`/item/${item.id}`} key={item.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '15px', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                <h4>{item.title}</h4>
-                <p style={{ color: '#666', fontSize: '14px' }}>{item.description || 'Нет описания'}</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
-                  <span style={{ fontWeight: 'bold', color: '#007bff' }}>{item.price_per_day} ₽ / день</span>
-                  <span style={{ fontSize: '12px', padding: '3px 8px', borderRadius: '4px', background: item.is_available ? '#e2f0d9' : '#fce4d6', color: item.is_available ? '#385723' : '#c65911' }}>
-                    {item.is_available ? 'Доступно' : 'Занято'}
-                  </span>
-                </div>
+              <div style={{ 
+                border: '1px solid #e2e8f0', 
+                borderRadius: '8px', 
+                padding: '15px', 
+                background: '#fff', 
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <h4 style={{ margin: '0 0 5px 0', color: '#0f172a' }}>{item.title}</h4>
+                  <p style={{ color: '#64748b', fontSize: '13px', margin: 0, height: '36px', overflow: 'hidden' }}>{item.description}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
+                    <span style={{ fontWeight: 'bold', color: '#22c55e', margin: '10px 0 0 0', fontSize: '16px' }}>{item.price_per_day} ₽/день</span>
+                    <span style={{ fontSize: '12px', padding: '3px 8px', borderRadius: '4px', background: item.is_available ? '#e2f0d9' : '#fce4d6', color: item.is_available ? '#385723' : '#c65911' }}>
+                      {item.is_available ? 'Доступно' : 'Занято'}
+                    </span>
+                  </div>
               </div>
             </Link>
           ))}

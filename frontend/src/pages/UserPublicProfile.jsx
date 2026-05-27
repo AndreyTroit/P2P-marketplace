@@ -91,7 +91,7 @@ export default function UserPublicProfile() {
                 Отзывы: <strong>{reviews.length}</strong>
               </Link>
             </span>
-            <span>Товаров на сайте: <strong>{items.length}</strong></span>
+            <span>📦Товаров на сайте: <strong>{items.length}</strong></span>
           </div>
         </div>
       </div>
@@ -125,8 +125,13 @@ export default function UserPublicProfile() {
                   />
                   <h4 style={{ margin: '0 0 5px 0', color: '#0f172a' }}>{item.title}</h4>
                   <p style={{ color: '#64748b', fontSize: '13px', margin: 0, height: '36px', overflow: 'hidden' }}>{item.description}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
+                    <span style={{ fontWeight: 'bold', color: '#22c55e', margin: '10px 0 0 0', fontSize: '16px' }}>{item.price_per_day} ₽/день</span>
+                    <span style={{ fontSize: '12px', padding: '3px 8px', borderRadius: '4px', background: item.is_available ? '#e2f0d9' : '#fce4d6', color: item.is_available ? '#385723' : '#c65911' }}>
+                      {item.is_available ? 'Доступно' : 'Занято'}
+                    </span>
+                  </div>   
                 </div>
-                <p style={{ fontWeight: 'bold', color: '#22c55e', margin: '10px 0 0 0', fontSize: '16px' }}>{item.price_per_day} ₽/день</p>
               </div>
             </Link>
           ))}
