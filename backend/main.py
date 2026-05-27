@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import timedelta
+from datetime import timedelta, date
 from typing import List
 
 import datetime
@@ -286,3 +286,41 @@ def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_
     db.commit()
     db.refresh(new_category)
     return new_category
+
+@app.post("/bookings")
+def create_booking(
+    booking_data: schemas.BookingCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user)
+):
+    item = db.query(models.Item).filter(models.Item.id == booking_data.item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+
+    if item.owner_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Вы не можете арендовать собственную вещь")
+
+    if booking_data.start_date < date.today():
+        raise HTTPException(status_code=400, detail="Дата начала не может быть в прошлом")
+    if booking_data.end_date <= booking_data.start_date:
+        raise HTTPException(status_code=400, detail="Дата окончания должна быть позже даты начала")
+
+    days = (booking_data.end_date - booking_data.start_date).days
+    total_price = days * item.price_per_day
+
+    new_booking = models.Booking(
+        item_id=booking_data.item_id,
+        renter_id=current_user.id,
+        start_date=booking_data.start_date,
+        end_date=booking_data.end_date,
+        total_price=total_price,
+        status="confirmed"
+    )
+
+    item.is_available = False 
+
+    db.add(new_booking)
+    db.commit()
+    db.refresh(new_booking)
+    
+    return {"status": "success", "booking": new_booking}

@@ -18,7 +18,11 @@ export default function ItemDetail() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [reviewMessage, setReviewMessage] = useState('');
-  
+
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [bookingMessage, setBookingMessage] = useState('');
+    
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -117,6 +121,45 @@ export default function ItemDetail() {
     }
   };
 
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
+    setBookingMessage('');
+    
+    try {
+      const res = await fetch('http://localhost:8000/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          item_id: parseInt(id),
+          start_date: startDate,
+          end_date: endDate
+        })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setBookingMessage(`🎉 Успешно забронировано! Итого к оплате: ${data.booking.total_price} ₽`);
+        setItem({ ...item, is_available: false });
+      } else {
+        setBookingMessage(`❌ Ошибка: ${data.detail || 'Не удалось забронировать'}`);
+      }
+    } catch (err) {
+      setBookingMessage('❌ Ошибка соединения с сервером.');
+    }
+  };
+
+  const calculatePreviewPrice = () => {
+    if (!startDate || !endDate) return 0;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = end - start;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays * item.price_per_day : 0;
+  };
+
   if (loading) return <p style={{ padding: '20px', color: '#1e293b' }}>Загрузка...</p>;
   if (!item) return <p style={{ padding: '20px', color: '#ef4444' }}>Товар не найден.</p>;
 
@@ -208,27 +251,90 @@ export default function ItemDetail() {
       </div>
 
       {!isOwner && (
-        <div style={{ background: '#ffffff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', maxWidth: '550px' }}>
-          <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#0f172a' }}>✍️ Оставить отзыв о сделке / владельце</h3>
-          {token ? (
-            <form onSubmit={handleSendReview} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <label style={{ color: '#334155', fontSize: '14px' }}>
-                Оценка (от 1 до 5):
-                <select value={rating} onChange={e => setRating(e.target.value)} style={{ marginLeft: '10px', padding: '6px', borderRadius: '6px', background: 'white', color: '#0f172a' }}>
-                  <option value="5">5 ★★★★★</option>
-                  <option value="4">4 ★★★★</option>
-                  <option value="3">3 ★★★</option>
-                  <option value="2">2 ★★</option>
-                  <option value="1">1 ★</option>
-                </select>
-              </label>
-              <textarea placeholder="Напишите честный отзыв..." value={comment} onChange={e => setComment(e.target.value)} required style={{ padding: '12px', height: '80px', borderRadius: '8px', border: '1px solid #cbd5e1', color: '#0f172a', background: 'white', resize: 'none' }} />
-              <button type="submit" style={{ background: '#0ea5e9', color: 'white', border: 'none', padding: '10px', cursor: 'pointer', borderRadius: '8px', fontWeight: 'bold' }}>Отправить отзыв</button>
-            </form>
-          ) : (
-            <p style={{ color: '#64748b', fontStyle: 'italic' }}>💡 Войдите, чтобы иметь возможность оставлять отзывы.</p>
-          )}
-          {reviewMessage && <p style={{ marginTop: '15px', fontWeight: 'bold', color: '#10b981' }}>{reviewMessage}</p>}
+        <div style={{ display: 'flex', gap: '30px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ 
+            flex: 1, 
+            minWidth: '300px', 
+            background: '#ffffff', 
+            padding: '25px', 
+            borderRadius: '12px', 
+            boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+            border: '1px solid #e2e8f0'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#0f172a' }}>✍️ Оставить отзыв о владельце</h3>
+            {token ? (
+              <form onSubmit={handleSendReview} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <label style={{ color: '#334155', fontSize: '14px' }}>
+                  Оценка (от 1 до 5):
+                  <select value={rating} onChange={e => setRating(e.target.value)} style={{ marginLeft: '10px', padding: '6px', borderRadius: '6px', background: 'white', color: '#0f172a', border: '1px solid #cbd5e1' }}>
+                    <option value="5">5 ★★★★★</option>
+                    <option value="4">4 ★★★★</option>
+                    <option value="3">3 ★★★</option>
+                    <option value="2">2 ★★</option>
+                    <option value="1">1 ★</option>
+                  </select>
+                </label>
+                <textarea placeholder="Напишите честный отзыв..." value={comment} onChange={e => setComment(e.target.value)} required style={{ padding: '12px', height: '80px', borderRadius: '8px', border: '1px solid #cbd5e1', color: '#0f172a', background: 'white', resize: 'none' }} />
+                <button type="submit" style={{ background: '#0ea5e9', color: 'white', border: 'none', padding: '10px', cursor: 'pointer', borderRadius: '8px', fontWeight: 'bold' }}>Отправить отзыв</button>
+              </form>
+            ) : (
+              <p style={{ color: '#64748b', fontStyle: 'italic', margin: 0 }}>💡 Войдите, чтобы иметь возможность оставлять отзывы.</p>
+            )}
+            {reviewMessage && <p style={{ marginTop: '15px', fontWeight: 'bold', color: '#10b981' }}>{reviewMessage}</p>}
+          </div>
+
+          <div style={{ 
+            flex: 1, 
+            minWidth: '300px', 
+            background: '#ffffff', 
+            padding: '25px', 
+            borderRadius: '12px', 
+            boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+            border: '1px solid #e2e8f0'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#0f172a' }}>📅 Бронирование вещи</h3>
+            {token ? (
+              item.is_available !== false ? (
+                <form onSubmit={handleBookingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <div style={{ display: 'flex', gap: '15px' }}>
+                    <label style={{ flex: 1, color: '#475569', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      Начало аренды:
+                      <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required style={inputStyle} />
+                    </label>
+                    <label style={{ flex: 1, color: '#475569', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      Конец аренды:
+                      <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required style={inputStyle} />
+                    </label>
+                  </div>
+
+                  {calculatePreviewPrice() > 0 && (
+                    <p style={{ margin: '5px 0', color: '#0f172a', fontSize: '15px', fontWeight: '500' }}>
+                      Итоговая стоимость: <span style={{ color: '#22c55e', fontWeight: 'bold', fontSize: '18px' }}>{calculatePreviewPrice()} ₽</span>
+                    </p>
+                  )}
+
+                  <button type="submit" style={{ background: '#22c55e', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
+                    Подтвердить бронирование
+                  </button>
+                </form>
+              ) : (
+                <p style={{ color: '#ef4444', fontWeight: '500', margin: 0 }}>🔒 К сожалению, этот предмет сейчас занят или уже забронирован.</p>
+              )
+            ) : (
+              <p style={{ color: '#64748b', fontStyle: 'italic', margin: 0 }}>💡 Войдите в аккаунт, чтобы забронировать эту вещь.</p>
+            )}
+            {bookingMessage && (
+              <p style={{ 
+                marginTop: '15px', 
+                fontWeight: 'bold', 
+                fontSize: '14px', 
+                color: bookingMessage.includes('❌') ? '#ef4444' : '#10b981' 
+              }}>
+                {bookingMessage}
+              </p>
+            )}
+          </div>
+
         </div>
       )}
 
@@ -243,6 +349,17 @@ const inputStyle = {
   fontSize: '14px',
   background: '#fff',
   color: '#0f172a',
+  width: '100%',
+  boxSizing: 'border-box'
+};
+
+const bookingInputStyle = {
+  padding: '8px 12px',
+  borderRadius: '6px',
+  border: '1px solid #cbd5e1',
+  background: '#ffffff',
+  color: '#0f172a',
+  fontSize: '14px',
   width: '100%',
   boxSizing: 'border-box'
 };

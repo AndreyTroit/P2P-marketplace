@@ -47,7 +47,6 @@ class Booking(Base):
     status = Column(String(20), default="pending") # pending, confirmed, rejected, completed, cancelled
     created_at = Column(TIMESTAMP, default=datetime.datetime.utcnow)
 
-    
     __table_args__ = (
         CheckConstraint('end_date >= start_date', name='chk_dates'),
     )

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from datetime import date
 
 class UserCreate(BaseModel):
     username: str
@@ -67,3 +68,11 @@ class CategoryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class BookingCreate(BaseModel):
+    item_id: int
+    start_date: date
+    end_date: date
+
+    class Config:
+        orm_mode = True
