@@ -95,7 +95,8 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db), current
         description=item.description,
         price_per_day=item.price_per_day,
         category_id=item.category_id,
-        owner_id=current_user.id
+        owner_id=current_user.id,
+        image_url=item.image_url
     )
     db.add(new_item)
     db.commit()
@@ -117,7 +118,7 @@ def get_my_profile(db: Session = Depends(get_db), current_user: models.User = De
         models.Item, models.Booking.item_id == models.Item.id
     ).filter(models.Item.owner_id == current_user.id).scalar()
 
-    user_rating = round(float(avg_rating), 1) if avg_rating else 5.0
+    user_rating = round(float(avg_rating), 1) if avg_rating else 0
 
     return schemas.UserProfileResponse(
         id=current_user.id,

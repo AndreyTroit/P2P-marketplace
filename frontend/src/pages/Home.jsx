@@ -66,7 +66,8 @@ export default function Home() {
           title: title,
           description: description,
           price_per_day: parseFloat(pricePerDay),
-          category_id: parseInt(categoryId)
+          category_id: parseInt(categoryId),
+          image_url: imageUrl
         })
       });
 

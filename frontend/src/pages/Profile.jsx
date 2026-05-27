@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [myItems, setMyItems] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [isEditing, setIsEditing] = useState(false);
@@ -31,6 +32,12 @@ export default function Profile() {
       const itemsData = await itemsRes.json();
       setMyItems(itemsData);
       
+      const reviewsRes = await fetch(`http://localhost:8000/users/${profData.id}/reviews`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const reviewsData = await reviewsRes.json();
+      setReviews(reviewsData);
+
       setLoading(false);
     } catch (err) {
       console.error("Ошибка загрузки данных профиля:", err);
@@ -102,10 +109,10 @@ export default function Profile() {
               <p style={{ margin: '0 0 10px 0', color: '#6c757d', fontSize: '14px' }}>📍 {profile.city || 'Город не указан'}</p>
               <p style={{ margin: '0 0 15px 0', fontStyle: 'italic', color: '#495057' }}>"{profile.bio}"</p>
               <div style={{ display: 'flex', gap: '20px', fontSize: '14px' }}>
-                <span>⭐ Реальный рейтинг: <strong>{profile.rating} / 5</strong></span>
+                <span>⭐ Рейтинг: <strong>{profile.rating} / 5</strong></span>
                 <span>
                   💬 <Link to={`/profile/reviews/${profile.id}`} style={{ color: '#007bff', textDecoration: 'underline', fontWeight: 'bold' }}>
-                  Посмотреть все отзывы
+                  Отзывы: <strong>{reviews.length}</strong>
                   </Link>
                 </span>
                 <span>📦 Ваших товаров: <strong>{myItems.length}</strong></span>

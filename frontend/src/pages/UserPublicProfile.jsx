@@ -7,6 +7,7 @@ export default function UserPublicProfile() {
   
   const [profile, setProfile] = useState(null);
   const [items, setItems] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,6 +29,9 @@ export default function UserPublicProfile() {
         console.error("Ошибка при сборке данных профиля:", err);
         setLoading(false);
       });
+
+     const fetchReviews = fetch(`http://localhost:8000/users/${userId}/reviews`).then(res => res.json());
+     fetchReviews.then(data => setReviews(data)).catch(err => console.error("Ошибка при загрузке отзывов:", err));
   }, [userId]);
 
   if (loading) return <p style={{ padding: '20px', color: '#1e293b' }}>Загрузка профиля...</p>;
@@ -84,7 +88,7 @@ export default function UserPublicProfile() {
             <span>⭐ Рейтинг: <strong>{profile.rating} / 5</strong></span>
             <span>
               💬 <Link to={`/profile/reviews/${profile.id}`} style={{ color: '#0ea5e9', textDecoration: 'underline', fontWeight: 'bold' }}>
-                Посмотреть отзывы
+                Отзывы: <strong>{reviews.length}</strong>
               </Link>
             </span>
             <span>Товаров на сайте: <strong>{items.length}</strong></span>

@@ -10,7 +10,7 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    avatar_url = Column(String(255), nullable=True, default="")
+    avatar_url = Column(TEXT, nullable=True, default="")
     bio = Column(TEXT, nullable=True, default="О себе пока ничего не написано...")
     city = Column(String(100), nullable=True, default="Не указан")
     created_at = Column(TIMESTAMP, default=datetime.datetime.utcnow)
@@ -31,7 +31,7 @@ class Item(Base):
     title = Column(String(150), nullable=False)
     description = Column(TEXT, nullable=True)
     price_per_day = Column(NUMERIC(10, 2), nullable=False)
-    image_url = Column(String(255), nullable=True)
+    image_url = Column(TEXT, nullable=True)
     is_available = Column(BOOLEAN, default=True)
     created_at = Column(TIMESTAMP, default=datetime.datetime.utcnow)
 
