@@ -76,3 +76,10 @@ class BookingCreate(BaseModel):
 
     class Config:
         orm_mode = True
+
+class MessageCreate(BaseModel):
+    receiver_id: int
+    text: str 
+
+    class Config:
+        orm_mode = True

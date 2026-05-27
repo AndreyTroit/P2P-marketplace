@@ -134,7 +134,7 @@ export default function Profile() {
         </div>
       </div>
 
-      <h3>Доступные предложения</h3>
+      <h3>📦 Мои товары</h3>
       {myItems.length === 0 ? (
         <p>Каталог пока пуст.</p>
       ) : (

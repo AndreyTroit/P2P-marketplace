@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from datetime import timedelta, date
 from typing import List
 
@@ -324,3 +324,85 @@ def create_booking(
     db.refresh(new_booking)
     
     return {"status": "success", "booking": new_booking}
+
+# 1. ПОЛУЧЕНИЕ СПИСКА АКТИВНЫХ ЧАТОВ
+@app.get("/chats")
+def get_user_chats(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Находим все уникальные ID пользователей, с кем текущий пользователь переписывался
+    sent_messages = db.query(models.Message.receiver_id).filter(models.Message.sender_id == current_user.id).distinct().all()
+    received_messages = db.query(models.Message.sender_id).filter(models.Message.receiver_id == current_user.id).distinct().all()
+    
+    # Собираем все ID в один сет, исключая себя
+    companion_ids = set([msg[0] for msg in sent_messages] + [msg[0] for msg in received_messages])
+    if current_user.id in companion_ids:
+        companion_ids.remove(current_user.id)
+        
+    # Извлекаем данные этих пользователей из базы
+    companions = db.query(models.User).filter(models.User.id.in_(companion_ids)).all()
+    
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "avatar_url": u.avatar_url if hasattr(u, 'avatar_url') else None
+        } for u in companions
+    ]
+
+
+@app.post("/messages")
+def send_message(
+    msg_data: schemas.MessageCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user)
+):
+    # Защита: нельзя писать самому себе
+    if current_user.id == msg_data.receiver_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Вы не можете отправить сообщение самому себе"
+        )
+        
+    # Проверяем, существует ли вообще пользователь, которому мы пишем
+    recipient = db.query(models.User).filter(models.User.id == msg_data.receiver_id).first()
+    if not recipient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Получатель не найден в базе данных"
+        )
+
+    # Создаем запись для таблицы messages
+    # ВНИМАНИЕ: Проверь названия полей (text или content), чтобы они совпадали с твоей моделью Message в models.py
+    new_message = models.Message(
+        sender_id=current_user.id,
+        receiver_id=msg_data.receiver_id,
+        text=msg_data.text, 
+        created_at=datetime.datetime.utcnow() # Время отправки
+    )
+    
+    db.add(new_message)
+    db.commit()
+    db.refresh(new_message)
+    
+    return new_message
+
+
+# 2. ПОЛУЧЕНИЕ ИСТОРИИ ДИАЛОГА С КОНКРЕТНЫМ ЮЗЕРОМ
+@app.get("/messages/{companion_id}")
+def get_chat_history(companion_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Вытаскиваем сообщения, где (Я -> Собеседник) ИЛИ (Собеседник -> Я)
+    messages = db.query(models.Message).filter(
+        or_(
+            and_(models.Message.sender_id == current_user.id, models.Message.receiver_id == companion_id),
+            and_(models.Message.sender_id == companion_id, models.Message.receiver_id == current_user.id)
+        )
+    ).order_by(models.Message.created_at.asc()).all()
+    
+    return [
+        {
+            "id": msg.id,
+            "sender_id": msg.sender_id,
+            "receiver_id": msg.receiver_id,
+            "text": msg.text if hasattr(msg, 'text') else msg.content,
+            "created_at": msg.created_at
+        } for msg in messages
+    ]

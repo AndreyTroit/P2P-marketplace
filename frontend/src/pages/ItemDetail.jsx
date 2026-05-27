@@ -160,6 +160,39 @@ export default function ItemDetail() {
     return diffDays > 0 ? diffDays * item.price_per_day : 0;
   };
 
+  const handleStartChat = async () => {
+    if (!token) {
+      alert("💡 Пожалуйста, авторизуйтесь, чтобы написать продавцу.");
+      return;
+    }
+
+    try {
+      // Отправляем стартовое системное сообщение бэкенду
+      const res = await fetch('http://localhost:8000/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          receiver_id: item.owner_id,
+          text: `Здравствуйте! Меня заинтересовал ваш товар: "${item.title}". Подскажите, он доступен?`
+        })
+      });
+
+      if (res.ok) {
+        // Как только сообщение записалось в БД, чат официально создан. Перенаправляем в мессенджер!
+        navigate('/chat');
+      } else {
+        const data = await res.json();
+        alert(`Ошибка: ${data.detail || 'Не удалось начать диалог'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Ошибка при соединении с сервером.");
+    }
+  };
+
   if (loading) return <p style={{ padding: '20px', color: '#1e293b' }}>Загрузка...</p>;
   if (!item) return <p style={{ padding: '20px', color: '#ef4444' }}>Товар не найден.</p>;
 
@@ -216,6 +249,15 @@ export default function ItemDetail() {
                   </Link>
                   {isOwner && <span style={{ marginLeft: '10px', color: '#22c55e', fontSize: '13px', fontWeight: 'bold' }}>(Это вы)</span>}
                 </p>
+
+                {/* Кнопка "Написать продавцу" отображается только для гостей */}
+                {!isOwner && (
+                  <button 
+                    onClick={handleStartChat}
+                    style={{background: '#0ea5e9', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold',
+                      fontSize: '14px', marginTop: '5px', marginBottom: '10px', display: 'inline-flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(14, 165, 233, 0.2)' }}
+                  >💬 Написать продавцу</button>
+                )}
 
                 <p style={{ margin: '15px 0', color: '#475569', fontSize: '15px', lineHeight: '1.5' }}>
                   {item.description || 'Описание товара не указано владельцем.'}
