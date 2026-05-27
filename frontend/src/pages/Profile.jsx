@@ -134,17 +134,24 @@ export default function Profile() {
         </div>
       </div>
 
-      <h3>📋 Мои товары в аренде</h3>
+      <h3>Доступные предложения</h3>
       {myItems.length === 0 ? (
-        <p style={{color: '#6c757d'}}>Вы еще не выставили ни одного товара.</p>
+        <p>Каталог пока пуст.</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px', marginTop: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px', marginTop: '15px' }}>
           {myItems.map((item) => (
-            <div key={item.id} style={{ border: '1px solid #dee2e6', borderRadius: '8px', padding: '15px', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-              <h4 style={{ margin: '0 0 10px 0' }}>{item.title}</h4>
-              <p style={{ color: '#6c757d', fontSize: '13px' }}>{item.description}</p>
-              <p style={{ fontWeight: 'bold', color: '#22c55e', margin: '10px 0 0 0' }}>{item.price_per_day} ₽/д</p>
-            </div>
+            <Link to={`/item/${item.id}`} key={item.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '15px', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                <h4>{item.title}</h4>
+                <p style={{ color: '#666', fontSize: '14px' }}>{item.description || 'Нет описания'}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
+                  <span style={{ fontWeight: 'bold', color: '#007bff' }}>{item.price_per_day} ₽ / день</span>
+                  <span style={{ fontSize: '12px', padding: '3px 8px', borderRadius: '4px', background: item.is_available ? '#e2f0d9' : '#fce4d6', color: item.is_available ? '#385723' : '#c65911' }}>
+                    {item.is_available ? 'Доступно' : 'Занято'}
+                  </span>
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
       )}

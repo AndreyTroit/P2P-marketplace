@@ -104,6 +104,57 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db), current
     return new_item
 
 
+@app.put("/items/{item_id}")
+def update_item(
+    item_id: int, 
+    updated_data: schemas.ItemCreate,
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user)
+):
+    item = db.query(models.Item).filter(models.Item.id == item_id).first()
+    
+    if not item:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+    
+    if item.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Вы можете редактировать только свои товары!"
+        )
+    
+    item.title = updated_data.title
+    item.description = updated_data.description
+    item.price_per_day = updated_data.price_per_day
+    item.category_id = updated_data.category_id
+    item.image_url = updated_data.image_url
+
+    db.commit()
+    db.refresh(item)
+    return {"status": "success", "message": "Товар успешно обновлен", "item": item}
+
+
+@app.delete("/items/{item_id}")
+def delete_item(
+    item_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user)
+):
+    item = db.query(models.Item).filter(models.Item.id == item_id).first()
+    
+    if not item:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+        
+    if item.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Вы можете удалять только свои товары!"
+        )
+        
+    db.delete(item)
+    db.commit()
+    return {"status": "success", "message": "Товар успешно удален из базы данных"}
+
+
 @app.get("/my/items", response_model=List[schemas.ItemResponse])
 def get_my_items(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     my_items = db.query(models.Item).filter(models.Item.owner_id == current_user.id).all()
