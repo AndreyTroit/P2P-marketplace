@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 export default function Messages() {
-  const [chats, setChats] = useState([]); // Список собеседников
-  const [activeChat, setActiveChat] = useState(null); // Текущий выбранный юзер
-  const [messages, setMessages] = useState([]); // История сообщений текущего чата
+  const [chats, setChats] = useState([]);
+  const [activeChat, setActiveChat] = useState(null); 
+  const [messages, setMessages] = useState([]); 
   const [newMessage, setNewMessage] = useState('');
   const [loadingChats, setLoadingChats] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -11,8 +11,6 @@ export default function Messages() {
   const token = localStorage.getItem('token');
   const messagesEndRef = useRef(null);
 
-  // 1. Загрузка списка активных чатов
-  // Измененный хук загрузки чатов и получения своего ID
   useEffect(() => {
     if (!token) return;
     fetch('http://localhost:8000/users/me', {
@@ -40,11 +38,9 @@ export default function Messages() {
     });
   }, [token]);
 
-  // 2. Загрузка истории сообщений (с автообновлением каждые 3 секунды)
   useEffect(() => {
     if (!activeChat || !token) return;
 
-    // Функция запроса истории диалога
     const fetchHistory = () => {
       fetch(`http://localhost:8000/messages/${activeChat.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }

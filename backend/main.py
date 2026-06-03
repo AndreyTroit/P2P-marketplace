@@ -81,6 +81,15 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.put("/users/me/password")
+def change_password(password_data: schemas.PasswordChange, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == password_data.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    user.password_hash = auth.get_password_hash(password_data.new_password)
+    db.commit()
+    return {"status": "success", "message": "Пароль успешно изменен!"}
+    
 
 @app.get("/items", response_model=List[schemas.ItemResponse])
 def get_all_items(db: Session = Depends(get_db)):

@@ -83,3 +83,7 @@ class MessageCreate(BaseModel):
 
     class Config:
         orm_mode = True
+    
+class PasswordChange(BaseModel):
+    email: EmailStr
+    new_password: str
